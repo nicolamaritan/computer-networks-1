@@ -1,0 +1,1 @@
+Client reads from a server a simple text resource, checks if the resource is expired or not through the Expires header. If the resource is expired, the client requests the resource, otherwise it reads it from "a cache".
