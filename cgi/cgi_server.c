@@ -83,6 +83,7 @@ int main(int argc, char* argv[])
       for (i=0; i<MAX_RL && read(c, rl+i, 1) && rl[i]!='\n' && rl[i-1]!='\r'; i++);
       rl[i] = 0;
 
+      // Header parse
       int j;
       h[0].n = hbuf;
       for (i=0,j=0; i<MAX_HBUF && j<MAX_H && read(c, hbuf+i, 1); i++)
@@ -161,53 +162,56 @@ int main(int argc, char* argv[])
 
       printf("Method: %s; File: %s\n", method, file);
 
-      // Checks if the file name is cgi
-      if(strncmp("cgi/", file+1, 4) == 0)
+      if (strcmp(method, "GET") == 0)
       {
-         char response[MAX_RES+1];
-         char out[MAX_OUT+1];
-         char* program = file+5;
-         printf("Executing server program: %s\n", program);
-
-         // Pipe for child-parent communication
-         int pipefd[2];
-         pipe(pipefd);
-
-         if (fork() == 0)
+         // Checks if the file name is cgi
+         if(strncmp("cgi/", file+1, 4) == 0)
          {
-            // Child process
+            char response[MAX_RES+1];
+            char out[MAX_OUT+1];
+            char* program = file+5;
+            printf("Executing server program: %s\n", program);
 
-            close(pipefd[0]); // Child does not read
+            // Pipe for child-parent communication
+            int pipefd[2];
+            pipe(pipefd);
 
-            dup2(pipefd[1], 1); // Send stdout to the pipe
-            dup2(pipefd[1], 2); // Send stderr
-
-            close(pipefd[1]);
-
-            // Start CGI program
-            if(execve(program, argv, qs) < 0)
+            if (fork() == 0)
             {
-               perror("Execve failed\n");
-               exit(1);
+               // Child process
+
+               close(pipefd[0]); // Child does not read
+
+               dup2(pipefd[1], 1); // Send stdout to the pipe
+               dup2(pipefd[1], 2); // Send stderr
+
+               close(pipefd[1]);
+
+               // Start CGI program
+               if(execve(program, argv, qs) < 0)
+               {
+                  perror("Execve failed\n");
+                  exit(1);
+               }
             }
+            else
+            {
+               // Parent process
+               close(pipefd[1]); // Parent cannot write
+
+               int* status;
+
+               // Wait for child process to end before reading from the pipe
+               wait(status);
+               while (read(pipefd[0], out, MAX_OUT));
+
+               printf("%s's output is: %s\n", program, out);
+
+               sprintf(response, "HTTP/1.1 200 OK\r\n\r\n%s", out);
+            }
+
+            write(c, response, strlen(response));
          }
-         else
-         {
-            // Parent process
-            close(pipefd[1]); // Parent cannot write
-
-            int* status;
-
-            // Wait for child process to end before reading from the pipe
-            wait(status);
-            while (read(pipefd[0], out, MAX_OUT));
-
-            printf("%s's output is: %s\n", program, out);
-
-            sprintf(response, "HTTP/1.1 200 OK\r\n\r\n%s", out);
-         }
-
-         write(c, response, strlen(response));
       }
 
 
