@@ -16,6 +16,7 @@
 #define MAX_QS 1000
 #define MAX_RES 10000
 #define MAX_OUT 1000
+#define MAX_MESSAGE 1000
 
 int min(int a, int b) 
 {
@@ -104,11 +105,23 @@ int main(int argc, char* argv[])
          }
       }
 
+
+      int content_length = 0;
       printf("Request-Line: %s\n", rl);
       for (j=0; h[j].n[0]; j++)
       {
          printf("%s: %s\n", h[j].n, h[j].v);
+         if (strcmp(h[j].n, "Content-Length") == 0)
+         {
+            content_length = atoi(h[j].v);
+         }
       }
+
+      // Listen for the message body
+      char message[MAX_MESSAGE+1];
+      int t;
+      for (i=0, t=0; i<MAX_MESSAGE && i<content_length  && (t=read(c, message+i, MAX_MESSAGE-i)); i+=t);
+      printf("message-body: %s\n", message);
 
       // Start request line parse
       char *method, *file, *version;
@@ -162,7 +175,7 @@ int main(int argc, char* argv[])
 
       printf("Method: %s; File: %s\n", method, file);
 
-      if (strcmp(method, "GET") == 0)
+      if (strcmp(method, "GET") == 0 || strcmp(method, "POST") == 0)
       {
          // Checks if the file name is cgi
          if(strncmp("cgi/", file+1, 4) == 0)
@@ -187,8 +200,13 @@ int main(int argc, char* argv[])
 
                close(pipefd[1]);
 
+               char* exec_argv[3];
+               exec_argv[0] = program; // First argument should be program name
+               exec_argv[1] = message; 
+               exec_argv[2] = 0;       // Last argument should be NULL
+
                // Start CGI program
-               if(execve(program, argv, qs) < 0)
+               if(execve(program, exec_argv, qs) < 0)
                {
                   perror("Execve failed\n");
                   exit(1);
@@ -213,7 +231,6 @@ int main(int argc, char* argv[])
             write(c, response, strlen(response));
          }
       }
-
 
       printf("\n--------------------------------------------\n");
       printf("Connection closed\n\n");
