@@ -1,14 +1,26 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
 
 #define MAX_H 100
 #define MAX_HBUF 5000
 #define MAX_RL 100
+#define MAX_QS 1000
+#define MAX_RES 10000
+#define MAX_OUT 1000
+
+int min(int a, int b) 
+{
+   return a < b ? a : b;
+}
 
 struct header
 {
@@ -18,8 +30,9 @@ struct header
 
 char hbuf[MAX_HBUF+1];
 char rl[MAX_RL+1];
+char* qs[MAX_QS+1];
 
-int main()
+int main(int argc, char* argv[])
 {
    int s = socket(AF_INET, SOCK_STREAM, 0);
    if (s<0)
@@ -55,7 +68,7 @@ int main()
    while (1)
    {
       printf("Searching for connection...\n");
-      
+
       struct sockaddr_in rem;
       int size = sizeof(rem);
       int c = accept(s, (struct sockaddr*)&rem, &size);
@@ -94,6 +107,107 @@ int main()
       for (j=0; h[j].n[0]; j++)
       {
          printf("%s: %s\n", h[j].n, h[j].v);
+      }
+
+      // Start request line parse
+      char *method, *file, *version;
+      method = rl;
+      int rl_length = strlen(rl);
+      for (i=0; i<rl_length; i++)
+      {
+         if (rl[i]==' ')
+         {
+            rl[i] = 0;
+            if (!file)
+            {
+               file = rl+i+1;
+            }
+            else
+            {
+               version = rl+i+1;
+            }
+         }
+         else if (rl[i] == '?')
+         {
+            rl[i++] = 0;
+            break;
+         }
+      }
+
+      // Query string parse - Starts scanning from the end of the previous parse
+      qs[0] = rl+i;
+      for (j=0; i<rl_length && j<MAX_QS; i++)
+      {
+         // Separates query of type name=value
+         if (rl[i] == '&')
+         {
+            rl[i] = 0;
+            qs[++j] = rl+i+1;
+         }
+         else if (rl[i] == ' ')  // End of query string reached
+         {
+            rl[i] = 0;
+            break;
+         }
+      }
+      // Last enviroment variable is the null pointer
+      qs[++j] = 0;
+
+      printf("Query Strings:\n");
+      for (i=0; qs[i]; i++)
+      {
+         printf("%s\n", qs[i]);
+      }
+
+      printf("Method: %s; File: %s\n", method, file);
+
+      // Checks if the file name is cgi
+      if(strncmp("cgi/", file+1, 4) == 0)
+      {
+         char response[MAX_RES+1];
+         char out[MAX_OUT+1];
+         char* program = file+5;
+         printf("Executing server program: %s\n", program);
+
+         // Pipe for child-parent communication
+         int pipefd[2];
+         pipe(pipefd);
+
+         if (fork() == 0)
+         {
+            // Child process
+
+            close(pipefd[0]); // Child does not read
+
+            dup2(pipefd[1], 1); // Send stdout to the pipe
+            dup2(pipefd[1], 2); // Send stderr
+
+            close(pipefd[1]);
+
+            // Start CGI program
+            if(execve(program, argv, qs) < 0)
+            {
+               perror("Execve failed\n");
+               exit(1);
+            }
+         }
+         else
+         {
+            // Parent process
+            close(pipefd[1]); // Parent cannot write
+
+            int* status;
+
+            // Wait for child process to end before reading from the pipe
+            wait(status);
+            while (read(pipefd[0], out, MAX_OUT));
+
+            printf("%s's output is: %s\n", program, out);
+
+            sprintf(response, "HTTP/1.1 200 OK\r\n\r\n%s", out);
+         }
+
+         write(c, response, strlen(response));
       }
 
 
