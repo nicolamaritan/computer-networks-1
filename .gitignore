@@ -54,6 +54,7 @@ dkms.conf
 # Other
 */np
 np
+a
 *.swp
 cgi/login
 cgi/occurencies
