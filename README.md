@@ -1,2 +1,2 @@
 # Computer Networks 1
-Assignments and experiments for Computer Networks 1 course at University of Padua.
+Assignments, experiments and exam solutions for the Computer Networks 1 course at University of Padua.
