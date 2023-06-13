@@ -160,7 +160,11 @@ int main()
 		if (strcmp(h[j].n, "Last-Modified") == 0)
 		{
 			char* val = h[j].v+1;
-			valTime = toTime(val);
+			//valTime = toTime(val);
+			//  Thu, 17 Oct 2019 07:18:26 GMT
+			struct tm lm;
+			strptime(val, "%a, %d %b %Y %H:%M:%S %Z", &lm);
+			valTime = mktime(&lm);
 			//time_t valTime = mktime(gmtime(val));
 			printf("valTime:%d\n", valTime);
 
@@ -177,7 +181,7 @@ int main()
 					i++;
 				}
 				fileDate[i] = 0;
-				printf("fileDate from file:%s--\n", fileDate);
+				//printf("fileDate from file:%s--\n", fileDate);
 				unsigned int fileDateInt = atoi(fileDate);
 				
 				i=0;
