@@ -21,7 +21,8 @@ char hbuf[5000];
 
 struct sockaddr_in remote_addr;
 unsigned char * ip;
-char * request = "GET / HTTP/1.1\r\nHost:www.google.com\r\n\r\n";
+//char * request = "GET / HTTP/1.1\r\nHost:www.google.com\r\n\r\n";
+char *request = "GET http://www.google.com/ HTTP/1.1\r\nConnection:close\r\n\r\n";
 
 char request2[100];
 unsigned char entity[ENTITY_SIZE+1];
@@ -35,11 +36,12 @@ if (-1 ==(s = socket(AF_INET, SOCK_STREAM, 0))) {
 	return 1;
 }
  remote_addr.sin_family = AF_INET;
- remote_addr.sin_port = htons(80);
+ remote_addr.sin_port = htons(20161);
  ip = (unsigned char*)&remote_addr.sin_addr.s_addr; 
  //ip[0]=142; ip[1]=250;ip[2]=200;ip[3]=36;
 //147.162.235.155
- ip[0]=88; ip[1]=80;ip[2]=187;ip[3]=84;
+ //ip[0]=88; ip[1]=80;ip[2]=187;ip[3]=84;
+ ip[0]=127; ip[1]=0; ip[2] = 0; ip[3] = 1;
 t = connect(s,(struct sockaddr *) &remote_addr,sizeof(struct sockaddr_in));
 if(t ==-1) {
 	perror("Connect Fallita\n");

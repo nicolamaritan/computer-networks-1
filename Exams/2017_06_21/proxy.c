@@ -30,6 +30,7 @@ struct hostent * he;
 
 // Added vars
 char* keepalive = "keep-alive";
+char* close_val = "close";
 char res[100000];
 
 int main()
@@ -117,10 +118,11 @@ int main()
 
             if(-1 == connect(s3,(struct sockaddr *) &server, sizeof(struct sockaddr_in)))
             {perror("Connect Fallita"); exit(1);}	
-            sprintf(request,"GET /%s HTTP/1.1\r\nHost:%s\r\nConnection:close\r\n\r\n",filename,hostname);
+            sprintf(request,"GET /%s HTTP/1.1\r\nHost:%s\r\nConnection:keep-alive\r\n\r\n",filename,hostname);
             printf("%s\n",request);
             write(s3,request,strlen(request));
 
+            int connection_found = 0;
             reqline = h[0].n = hbuffer;
             for (i=0,j=0; read(s3,hbuffer+i,1); i++) {
                 printf("%c",hbuffer[i]);
@@ -133,8 +135,9 @@ int main()
                     hbuffer[i]=0;
                     if (strcmp(h[j].n, "Connection") == 0)
                     {
+                        connection_found = 1;
                         //printf("found connection");
-                        h[j].v = keepalive;
+                        h[j].v = close_val;
                     }
                     else
                     {
@@ -153,6 +156,11 @@ int main()
                 sprintf(res, "%s:%s\r\n", h[j].n, h[j].v);
                 write(s2, res, strlen(res));
             }
+            if (!connection_found)
+            {
+                write(s2, "Connection:close\r\n", 18);
+            }
+
             // Header terminator
             write(s2, "\r\n", 2);
 
