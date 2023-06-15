@@ -60,3 +60,6 @@ out
 *.swp
 cgi/login
 cgi/occurencies
+*.jpeg
+*.jpg
+*.png
