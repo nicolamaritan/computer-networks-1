@@ -104,12 +104,9 @@ int main(){
 														printf("\n\n%s\tSocket %d trans %d\n\n", filename, s2, trans);
 
 														int cl = 0;
-														// Calculate Content-Length
-														while ((ch=fgetc(fin)) != EOF)
-														{
-																cl++;
-														}
-														close(fin);
+														fseek(fin, 0, SEEK_END);
+														cl = ftell(fin);
+														rewind(fin);
 														printf("content-length=%d\n", cl);
 
 														sprintf(response,"HTTP/1.1 200 OK\r\nContent-Length:%d\r\n\r\n", cl);
@@ -118,7 +115,6 @@ int main(){
 														//sprintf(response, "HTTP/1.1 200 OK\r\n\r\n");
 														write(s2,response,strlen(response));
 
-														fin = fopen(filename+1, "rt");
 														while( EOF != (ch=fgetc(fin))){
 																write(s2,&ch,1);
 														}
