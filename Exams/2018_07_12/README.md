@@ -9,8 +9,8 @@ Si faccia riferimento alla ​RFC2616​.
 Si provi con un browser l’accesso a due pagine tra loro linkate verificando che il server risponda a numerose
 richieste senza interrompere la connessione.
 pag1.html:
-<html>Vai a <A HREF=”pag2.html”>Pagina 2</A></html>
+`<html>Vai a <A HREF=”pag2.html”>Pagina 2</A></html>`
 pag2.html:
-<html>Vai a <A HREF=”pag1.html”>Pagina 1</A></html>
+`<html>Vai a <A HREF=”pag1.html”>Pagina 1</A></html>`
 
 From https://github.com/nicomazz/ComputerNetworks-unipd2018
