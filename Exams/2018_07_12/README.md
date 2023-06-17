@@ -1,6 +1,6 @@
 Università degli Studi di Padova
 Dipartimento di Ingegneria dell’Informazione
-Esame di Reti di Calcolatori - 1 Febbraio 2019
+Esame di Reti di Calcolatori - 12 Luglio 2018
 Prof. ing. Nicola Zingirian
 
 Si modifichi il programma ​ws18.c in modo tale che sia in grado di gestire più richieste HTTP/1.1 all’interno della
