@@ -49,10 +49,11 @@ int main(){
 
 				while (1)
 				{
+						// read returns -1 when timeout occurs
 						bzero(hbuffer,10000);
 						bzero(h,sizeof(struct header)*100);
 						reqline = h[0].n = hbuffer;
-						for (i=0,j=0; read(s2,hbuffer+i,1); i++) {
+						for (i=0,j=0; read(s2,hbuffer+i,1)>0; i++) {
 								if(hbuffer[i]=='\n' && hbuffer[(i)?i-1:i]=='\r'){
 										hbuffer[i-1]=0; // Termino il token attuale
 										if (!h[j].n[0]) break;
