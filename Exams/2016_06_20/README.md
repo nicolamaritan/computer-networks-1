@@ -1,3 +1,4 @@
+# Esame 2016/06/20
 Si modifichi il programma wp16.c in modo tale che:
 se l'indirizzo IP del client che vi si collega e' presente in una lista 
 di indirizzi IP memorizzata nel programma wp16.c (massimo 4 indirizzi) 
