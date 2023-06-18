@@ -1,7 +1,4 @@
-Università degli Studi di Padova
-Dipartimento di Ingegneria dell’Informazione
-Esame di Reti di Calcolatori - 12 Luglio 2018
-Prof. ing. Nicola Zingirian
+# Esame 2018/07/12
 
 Si modifichi il programma ​ws18.c in modo tale che sia in grado di gestire più richieste HTTP/1.1 all’interno della
 medesima connessione TCP senza l’uso di chunk.
