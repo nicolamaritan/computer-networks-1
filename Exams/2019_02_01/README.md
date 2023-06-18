@@ -1,7 +1,4 @@
-Università degli Studi di Padova
-Dipartimento di Ingegneria dell’Informazione
-Esame di Reti di Calcolatori - 1 Febbraio 2019
-Prof. ing. Nicola Zingirian
+# Esame 2019/02/01
 
 Si modifichi il programma Web Server in modo che si comporti come segue.
 Se l'utente di un client richiede una risorsa provenendo da una pagina configurata come
