@@ -4,11 +4,9 @@
 #include <sys/types.h>          /* See NOTES */
 #include <sys/socket.h>
 #include <unistd.h>
+
 #include <arpa/inet.h>
 #include <stdio.h>
-
-#define MAX_TRANS 3
-
 char * reqline;
 struct header {
 		char * n;
@@ -21,7 +19,6 @@ struct sockaddr_in local_addr, remote_addr;
 char request[100000];
 char response[100000];
 char * method, *filename , *ver;
-int socketCounter = -1;
 
 int main(){
 		FILE * fin;
@@ -43,24 +40,20 @@ int main(){
 				len = sizeof(struct sockaddr_in);
 				s2=accept(s,(struct sockaddr *)&remote_addr, &len);
 				if (s2 == -1) { perror ("Accept Fallita"); return -1; }
-				socketCounter++;
 
-				if (fork())
+				// 5 seconds timeout
+				struct timeval tv;
+				tv.tv_sec = 5;
+				tv.tv_usec = 0;
+				setsockopt(s2, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+
+				while (1)
 				{
-					close(s2);
-					continue;
-				}
-
-				printf("\n\nNew accept\n\n");
-
-				int trans;
-				for (trans = 0; trans < MAX_TRANS; trans++)
-				//while (1)
-				{
+						// read returns -1 when timeout occurs
 						bzero(hbuffer,10000);
 						bzero(h,sizeof(struct header)*100);
 						reqline = h[0].n = hbuffer;
-						for (i=0,j=0; read(s2,hbuffer+i,1); i++) {
+						for (i=0,j=0; read(s2,hbuffer+i,1)>0; i++) {
 								if(hbuffer[i]=='\n' && hbuffer[(i)?i-1:i]=='\r'){
 										hbuffer[i-1]=0; // Termino il token attuale
 										if (!h[j].n[0]) break;
@@ -70,6 +63,14 @@ int main(){
 										hbuffer[i]=0;
 										h[j].v = hbuffer + i + 1;
 								}
+						}
+
+						// If 0 bytes are are read
+						if (hbuffer[0] == 0)
+						{
+								printf("Read 0 byte from client, closing connection\n");
+								close(s2);
+								break;
 						}
 						for(i=0;h[i].n[0];i++){
 								printf("h[%d].n ---> %s , h[%d].v ---> %s\n",i,h[i].n,i,h[i].v);
@@ -93,7 +94,7 @@ int main(){
 								}
 								else { printf("Error in filename\n"); err=1; }
 						}
-						else {printf("Error in method\n"); printf("reqline:%s\n", reqline); err=1; }
+						else {printf("Error in method\n"); err=1; }
 
 						if (err) 
 								sprintf(response,"HTTP/1.1 400 Bad Request\r\n\r\n");
@@ -108,39 +109,19 @@ int main(){
 										if ((fin = fopen(filename+1,"rt"))==NULL)
 												sprintf(response,"HTTP/1.1 404 Not Found\r\n\r\n");
 										else{
-												// Calculate the file size
 												fseek(fin, 0, SEEK_END);
 												int cl = ftell(fin);
-												fseek(fin, 0, SEEK_SET);
-												printf("content-length: %d\n", cl);
+												rewind(fin);
 
-												printf(">>>>>>>>>>>>>%s\tSocket %d trans %d\n\n", filename, s2+socketCounter, trans);
-												if (strcmp(filename+1, "prova.html") == 0)
-												{
-													sprintf(response,"HTTP/1.1 200 OK\r\nContent-Length:%d\r\nContent-Type: text/html; charset=utf-8\r\n\r\n", cl);
-													write(s2,response,strlen(response));
-													while( EOF != (ch=fgetc(fin))){
+												sprintf(response,"HTTP/1.1 200 OK\r\nContent-Length:%d\r\nContent-Type: text/html; charset=utf-8\r\n\r\n", cl);
+												write(s2,response,strlen(response));
+												while( EOF != (ch=fgetc(fin))){
 														write(s2,&ch,1);
-													}
 												}
-												else
-												{
-													// Images needs + 1, otherwise request line is wrongly parsed at next iteration
-													sprintf(response,"HTTP/1.1 200 OK\r\nContent-Length:%d\r\nContent-Type: image/jpeg\r\n\r\n", cl+1);
-													write(s2,response,strlen(response));
-													
-													// read/write do not work as the file is not a text file
-													char send_buffer[cl+1];
-													while(!feof(fin)) {
-															fread(send_buffer, 1, sizeof(send_buffer), fin);
-															write(s2, send_buffer, sizeof(send_buffer));
-															bzero(send_buffer, sizeof(send_buffer));
-															
-													}
-												}
-
 												fclose(fin);
-												continue;	// Next transmission
+												printf("\n\n\n");
+												//close(s2);
+												continue;
 										}
 								} 
 								else sprintf(response,"HTTP/1.1  501 Not Implemented\r\n\r\n");
@@ -148,12 +129,9 @@ int main(){
 						for(len=0;len<1000 && response[len] ; len++);
 						write(s2,response,len);
 						request[t]=0;
-						printf("%s\n",request);
+						printf("%s\n\n\n",request);
 						close(s2);
-						exit(0);
 				}
-				close(s2);
-				exit(0);
 		}
 }
 
