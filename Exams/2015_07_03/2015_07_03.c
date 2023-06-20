@@ -83,7 +83,7 @@ int main(){
 		else{
 			printf("Method = %s, filename = %s, version = %s",method, filename, ver);
 			if(!strcmp(method,"GET")){
-				if (!strncmp(filename, "/reflect/", 9))
+				if (!strncmp(filename, "/reflect", 9))
 				{
 					// Sending status line
 					sprintf(response,"HTTP/1.1 200 OK\r\n\r\n");
@@ -101,13 +101,13 @@ int main(){
 
 					// Sending back ip address
 					unsigned char* ptr = (unsigned char*)&remote_addr.sin_addr.s_addr;
-					sprintf(response, "%d.%d.%d.%d\n", ptr[0], ptr[1], ptr[2], ptr[3]);
+					sprintf(response, "\r\n%d.%d.%d.%d", ptr[0], ptr[1], ptr[2], ptr[3]);
 					write(s2, response, strlen(response));
 
 					// Sending back port
-					sprintf(response, "%d", htons(remote_addr.sin_port));
+					sprintf(response, "\r\n%d", htons(remote_addr.sin_port));
 					write(s2, response, strlen(response));
-					
+
 					close(s2);
 					continue;
 				}
