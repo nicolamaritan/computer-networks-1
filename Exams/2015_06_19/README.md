@@ -1,0 +1,1 @@
+Si modifichi il programma che implementa il Web Server in modo che invii un entity body utilizzando il transfer coding chunked, come descritto dalla grammatica riportata nella sezione 3.6.1 della RFC 2616, evitando tutte le parti opzionali. 
