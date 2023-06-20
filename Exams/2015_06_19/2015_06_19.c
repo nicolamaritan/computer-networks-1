@@ -4,6 +4,7 @@
 #include <sys/types.h>          /* See NOTES */
 #include <sys/socket.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include <arpa/inet.h>
 #include <stdio.h>
@@ -103,8 +104,8 @@ int main(){
 					sprintf(response,"HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nTransfer-Encoding:chunked\r\n\r\n");
 					write(s2,response,strlen(response));
 					/*while( EOF != (ch=fgetc(fin))){
-						write(s2,&ch,1);
-					}*/
+					  write(s2,&ch,1);
+					  }*/
 
 					char chunkSize[100];
 
@@ -113,27 +114,32 @@ int main(){
 						int toSend;
 						if (i + CHUNK_SIZE >= len)
 						{
-							toSend = len - CHUNK_SIZE;
+							toSend = len - i;
 						}
 						else
 						{
 							toSend = CHUNK_SIZE;
 						}
-						
-						sprintf(chunkSize, "%x\r\n", toSend);
+
+						printf("toSend: %d\n", toSend);
+						sprintf(chunkSize, "%X\r\n", toSend);
+						printf("hex chunk size: %s\n", chunkSize);
 						write(s2, chunkSize, strlen(chunkSize));
 
-						for (j=0; (ch=fgetc(fin)) != EOF && j<toSend; j++)
+						for (j=0; j<toSend; j++)
 						{
+							// If put before condition j<toSend, some chars are read but not written to the socket. In this way a read char is always sent to the socket.
+							ch = fgetc(fin);
 							write(s2, &ch, 1);
 						}
-						write(s2, "\r\n", 2);
 
-						
+						write(s2, "\r\n", 2);
+						printf("sent: %d\n", i+toSend);
+
 					}
-					write(s2, "\r\n", 2);
+					write(s2, "0\r\n\r\n", 5);
 					fclose(fin);
-					close(s2);
+					//close(s2);
 					continue;
 				}
 			} 
