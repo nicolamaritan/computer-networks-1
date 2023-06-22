@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <signal.h>
 
+#define MAX_TRANS 3
+
 
 
 int pid;
@@ -151,12 +153,20 @@ int main()
 				
 				for (t=0, i=0; t=read(s3, entity+i, MAX_ENTITY-i); i+=t);
 
-				sprintf(response, "%s\r\nContent-Length:%d\r\nConnection:keep-alive\r\n\r\n", h[0].n, i);
+				if (trans+1 < MAX_TRANS)
+				{
+					sprintf(response, "%s\r\nContent-Length:%d\r\nConnection:keep-alive\r\n\r\n", h[0].n, i);
+				}
+				else
+				{
+					sprintf(response, "%s\r\nContent-Length:%d\r\nConnection:close\r\n\r\n", h[0].n, i);
+				}
+
 				write(s2, response, strlen(response));
 
 				printf("sending to %d\n", s2);
-				for (t=0, j=0; j<i && (t=write(s2, entity+j, MAX_ENTITY-j)); j+=t);
-				
+				for (t=0, j=0; j<i && (t=write(s2, entity+j, i-j)); j+=t);
+
 				printf("Socket %d\ttrans %d\n", s2, trans);
 
 				close(s3);
