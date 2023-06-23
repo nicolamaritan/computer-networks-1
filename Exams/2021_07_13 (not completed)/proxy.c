@@ -120,8 +120,6 @@ int main()
 			char piece[SIZE];
 			int p=0;
 
-			sprintf(response, "HTTP/1.1 200 OK\r\nContent-Type:image/jpeg\r\n\r\n");
-			write(s2, response, strlen(response));
 
 			int toExit = 0;
 
@@ -131,13 +129,52 @@ int main()
 			strcpy(filenameStr, filename);
 			strcpy(hostnameStr, hostname);
 
+
+			sprintf(request,"HEAD /%s HTTP/1.1\r\nHost:%s\r\n\r\n",filenameStr,hostnameStr);
+			write(s3,request,strlen(request));
+
+			printf("**************server header parsing\n");
+			// Parsing headers
+			bzero(hbuffer,10000);
+			bzero(h,100*sizeof(struct header));
+			reqline = h[0].n = hbuffer;
+			for (i=0,j=0; read(s3,hbuffer+i,1); i++) {
+				printf("%c",hbuffer[i]);
+				if(hbuffer[i]=='\n' && hbuffer[i-1]=='\r'){
+					hbuffer[i-1]=0; // Termino il token attuale
+					if (!h[j].n[0]) break;
+					h[++j].n=hbuffer+i+1;
+				}
+				if (hbuffer[i]==':' && !h[j].v && j>0){
+					hbuffer[i]=0;
+					h[j].v = hbuffer + i + 1;
+				}
+			}
+
+			int fullCl;
+			for (i=0; h[i].n[0]; i++)
+			{
+				//printf("%s:%s\n", h[i].n, h[i].v);
+				if (strcmp("Content-Length", h[i].n) == 0)
+				{
+					fullCl = atoi(h[i].v+1);
+				}
+			}
+
+			printf("fullImageLen: %d\n", fullCl);
+			sprintf(response, "HTTP/1.1 200 OK\r\nContent-Type:image/jpeg\r\nContent-Length:%d\r\n\r\n", fullCl);
+			write(s2, response, strlen(response));
+
+
+			int cl;
+			toExit = 1;
 			while (1)
 			{
 				sprintf(request,"GET /%s HTTP/1.1\r\nHost:%s\r\nRange:bytes=%d-%d\r\n\r\n",filenameStr,hostnameStr, firstBytePos, lastBytePos);
-				
+
 				printf("%s, from socket %d\n", request, s2);
 				write(s3,request,strlen(request));
-				
+
 				printf("**************server header parsing\n");
 				// Parsing headers
 				bzero(hbuffer,10000);
@@ -147,7 +184,7 @@ int main()
 					printf("%c",hbuffer[i]);
 					if(hbuffer[i]=='\n' && hbuffer[i-1]=='\r'){
 						hbuffer[i-1]=0; // Termino il token attuale
-							if (!h[j].n[0]) break;
+						if (!h[j].n[0]) break;
 						h[++j].n=hbuffer+i+1;
 					}
 					if (hbuffer[i]==':' && !h[j].v && j>0){
@@ -158,7 +195,7 @@ int main()
 
 
 				int cl;
-				toExit = 0;
+				toExit = 1;
 				for (i=0; h[i].n[0]; i++)
 				{
 					//printf("%s:%s\n", h[i].n, h[i].v);
@@ -168,7 +205,7 @@ int main()
 					}
 					if (strcmp("Content-Range", h[i].n) == 0)
 					{
-						toExit = 1;
+						toExit = 0;
 					}
 				}
 
@@ -179,11 +216,12 @@ int main()
 				firstBytePos += SIZE;
 				lastBytePos += SIZE;
 
-				if (!toExit)
-					sleep(1);
+				if (toExit)
+					break;	
 				p++;
 			}
-			printf("closing s3, p=%d\n", p);
+			printf("closing s3 and s2, p=%d\n", p);
+			close(s2);
 			close(s3);
 
 
