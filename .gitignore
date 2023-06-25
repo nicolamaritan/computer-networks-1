@@ -64,3 +64,4 @@ cgi/occurencies
 *.jpg
 *.png
 cache
+tmp
