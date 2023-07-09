@@ -1,4 +1,4 @@
-# Esame 2018/08/30
+# Exam 2018/08/30
 ## English
 Modify the wc18.c web client program to handle the control mechanism
 caching based on the Last-Modified and If-Modified-Since headers described in RFC2616 at chapters 14.29,
