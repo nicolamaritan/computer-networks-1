@@ -1,4 +1,4 @@
-# Esame 2015/06/19
+# Exam 2015/06/19
 
 ## English
 Modify the program that implements the Web Server so that it sends an entity body using chunked transfer coding, as described by the grammar reported in section 3.6.1 of RFC 2616, avoiding all the optional parts.
